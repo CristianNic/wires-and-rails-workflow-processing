@@ -1,0 +1,16 @@
+version: "3"
+services:
+  redis:
+    image: redis:latest
+    volumes:
+      - ./data:/data
+  cron-and-queue:
+    build: .
+    volumes:
+      - .:/app
+      - ./tmp:/tmp
+    depends_on:
+      - redis
+    ports:
+      - "9181:9181" # rq-dashboard
+    env_file: .env
