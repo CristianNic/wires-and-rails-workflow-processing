@@ -4,8 +4,11 @@ Interface to ocropus binaries for image row segmentation.
 
 import subprocess
 import os
+import numpy as np
+from PIL import Image
 
 from .logger import setup_logger
+
 
 class Ocropy:
     """
@@ -28,6 +31,53 @@ class Ocropy:
         name, _ext = os.path.splitext(image_file_path)
         # The name and the resulting ocropus directory have the exact same name
         return [os.path.join(name, file) for file in os.listdir(name)]
+
+    def _extract_raw_rows(self, image_file_path):
+        """Run row segmentation on the provided path and return the new row absolute filepaths"""
+        success = self._execute_row_segmentation_command(image_file_path)
+        # self._cleanup()
+        if not success:
+            # TODO throw exception so rq puts in failed queue / other recovery strategy
+            return False
+        name, _ext = os.path.splitext(image_file_path)
+        # The name and the resulting ocropus directory have the exact same name
+        return [os.path.join(name, file) for file in os.listdir(name)]
+
+    def _extract_lines_from_pseg(self, pseg_path):
+        """ extract lines coords from pseq file """
+        img = np.array(Image.open(pseg_path))
+        height, width = img.shape[0:2]
+        print(height, width)
+        # we use only blue pixels
+        pixels = img[:, :, 2]
+
+        line_idx = np.min(pixels, axis=1)
+        lines = []
+        top, current_line_id = 0, line_idx[0]
+        for x, line_id in enumerate(line_idx):
+            if line_id == current_line_id:
+                continue
+            # new line started
+            if current_line_id != 255:
+                rows = pixels[top:x]
+                # set dots to 1
+                print(rows)
+                rows[rows < 255] = 1
+                rows[rows > 1] = 0
+                columns = np.sum(rows, axis=0)
+                lines.append({
+                    'id': current_line_id,
+                    'top': top,
+                    'bottom': x - 1,
+                    'columns': columns
+                })
+                print(columns)
+                exit(0)
+            current_line_id = line_id
+            top = x
+
+        print(lines)
+        print(rows_idx)
 
     def _try_subprocess_cmd(self, cmd):
         self._logger.debug('Running cmd in subprocess: %s', str(cmd))
