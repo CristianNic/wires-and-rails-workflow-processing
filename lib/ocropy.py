@@ -10,6 +10,13 @@ from PIL import Image
 from .logger import setup_logger
 
 
+def file_name_to_int(path):
+    """ helper funftion for sorting sub images"""
+    file_name = os.path.basename(path)
+    parts = file_name.split('.')
+    return int(parts[0], 16)
+
+
 class Ocropy:
     """
     Interface to ocropus scripts for image row segmentation.
@@ -39,9 +46,14 @@ class Ocropy:
         if not success:
             # TODO throw exception so rq puts in failed queue / other recovery strategy
             return False
-        name, _ext = os.path.splitext(image_file_path)
-        # The name and the resulting ocropus directory have the exact same name
-        return [os.path.join(name, file) for file in os.listdir(name)]
+        return self._get_list_of_sub_images(image_file_path)
+
+    def _get_list_of_sub_images(self, path):
+        name, _ext = os.path.splitext(path)
+        files = [os.path.join(name, file) for file in os.listdir(name)]
+        files.sort(key=file_name_to_int)
+
+        return files
 
     def _extract_lines_from_pseg(self, pseg_path):
         """ extract lines coords from pseq file """
@@ -59,7 +71,7 @@ class Ocropy:
                 continue
             # new line started
             if current_line_id != 255:
-                rows = pixels[top:x]
+                rows = pixels[top:x-1]
                 # set dots to 1
                 print(rows)
                 rows[rows < 255] = 1
@@ -71,6 +83,7 @@ class Ocropy:
                     'bottom': x - 1,
                     'columns': columns
                 })
+                print(x-1 - top)
                 print(columns)
                 exit(0)
             current_line_id = line_id
