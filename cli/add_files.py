@@ -4,7 +4,8 @@ from pathlib import Path
 
 
 def main(
-         path, extension, delimiter, metadata, dry_run):
+         path, extension, delimiter, metadata,
+         dry_run, username, password, subjectset):
     # prepare metadata
     metadata = metadata.split(delimiter)
 
@@ -22,7 +23,7 @@ def main(
 
         files.append({
             'file_name': str(file),
-            'metadata':  dict(zip(metadata, f_metadata))
+            'metadata': dict(zip(metadata, f_metadata))
         })
 
     for file in files:
@@ -31,9 +32,7 @@ def main(
 
 
 if __name__ == '__main__':
-    desc = """CLI tool to upload new images with metadata:\n
-    \n
-    python3 add_files.py
+    desc = """CLI tool to upload new images with metadata.
     """
 
     p = argparse.ArgumentParser(
@@ -55,9 +54,22 @@ if __name__ == '__main__':
     p.add_argument(
         "--dry-run",
         help="Do not actually load info", action='store_true')
-    args = p.parse_args()
-    main(**vars(args))
+    p.add_argument("--username", help="panoptes username", default=None)
+    p.add_argument("--password", help="panoptes password", default=None)
+    p.add_argument(
+        "--subjectset", help="Subject set ID", type=int, default=None)
 
+    args = p.parse_args()
+    args_dict = vars(args)
+    if args.dry_run:
+        main(**args_dict)
+
+    for a in ['username', 'password', 'subjectset']:
+        if args_dict[a] is None:
+            p.error(
+                "the following arguments are required: --{}".format(a))
+
+    main(**vars(args))
     # parser.add_argument("output", help="output image")
     # parser.add_argument("--cosinus", action="store_true")
     # parser.add_argument("--relict", action="store_true")
