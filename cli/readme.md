@@ -2,20 +2,22 @@
 
 ## Prerequirments
 
-python 3.6 
+Python 3.5 (or later) and panoptes-client
+
+	pip install panoptes-client
 
 ## CLI tool to upload new images with metadata
-My thoughts on the functions for the CLI are as follows:
 
+Full usage exaple:
 
+	python3 add_files.py --path ../samples/ --metadata type-source-year-page --extension .bin.png  --delimiter "-" --username denys.potapov --password 12345678 --subjectset 76895
 
-1. should be able to specify meta-data format in image title and have CLI parse it (e.g., telegraph-WU-1874-0001.png, provide CLI with separator "-" and specify order of metadata as "type", "source", 'year', "page")
-2. should be able to specify the subject set to which it will be added, by number. (This will allow flexibility going forward to put it in a specific subject set which might not yet exist)
-3. should be able to ingest a whole directory/set of directories recursively.
+Will seach for all \*.bin.png files in folder, and split the filename to metadata type-source-year-page
 
+Dry run (do not load anything, jsut preview the file metadata parsing):
 
-So, I imagine a CLI tool where I could call the command like this:
+	python3 add_files.py --path ../samples/ --metadata type-source-year-page --extension .bin.png --dry-run
 
-add_files --directory 'path/to/directory/to/ingest'  --delimiter '-' (character the divides metadata items in the file name) --metadata "delimiter-separated-list-of-metadata-fields" --subjectset NUMBER
+Show all the params
 
-python3 add_files.py --path ../../task.2.sample/ --metadata type-source-year-page --extension .bin.png
+	python3 add_files.py -h

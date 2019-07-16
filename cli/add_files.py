@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 from pathlib import Path
+from panoptes_client import Panoptes, SubjectSet, Subject
 
 
 def main(
@@ -26,9 +27,33 @@ def main(
             'metadata': dict(zip(metadata, f_metadata))
         })
 
+    if dry_run:
+        for file in files:
+            print('  Preview {} with metadata: {}'.format(
+                file['file_name'], file['metadata']))
+        return
+
+    Panoptes.connect(username=username, password=password)
+    subjectset = SubjectSet.find(subjectset)
+    project = subjectset.links.project
+
+    subjects = []
     for file in files:
-        print('  Storing {} with metadata: {}'.format(
+        print('  Loading {} with metadata: {}'.format(
             file['file_name'], file['metadata']))
+        if dry_run:
+            continue
+
+        subject = Subject()
+        subject.links.project = project
+        subject.add_location(file['file_name'])
+        subject.metadata.update(file['metadata'])
+        subject.save()
+        subjects.append(subject)
+
+    print('  Saving all...')
+    subjectset.add(subjects)
+    print('  Done')
 
 
 if __name__ == '__main__':
@@ -63,6 +88,7 @@ if __name__ == '__main__':
     args_dict = vars(args)
     if args.dry_run:
         main(**args_dict)
+        exit(0)
 
     for a in ['username', 'password', 'subjectset']:
         if args_dict[a] is None:
