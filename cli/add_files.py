@@ -1,21 +1,39 @@
 #!/usr/bin/env python
 import argparse
-from glob import glob
 from pathlib import Path
 
 
 def main(
-         path, extension):
-    pathes = Path(path).glob('**/*.' + extension)
-    pathes = sorted(pathes)
-    # pathes = glob.glob('C:/Users/sam/Desktop/file1/**/*.txt', recursive=True)
-    print(list(pathes))
+         path, extension, delimiter, metadata, dry_run):
+    # prepare metadata
+    metadata = metadata.split(delimiter)
+
+    # iterate over files pattern
+    files = []
+    pathes = Path(path).glob('**/*' + extension)
+    for file in sorted(pathes):
+        # crop any extension, ex .bin.png
+        file_stem = file.name[:-len(extension)]
+
+        # get metadata from filename
+        f_metadata = file_stem.split(delimiter)
+        assert len(f_metadata) == len(metadata), (
+            "Can't parse metadata {} for file {}".format(metadata, str(file)))
+
+        files.append({
+            'file_name': str(file),
+            'metadata':  dict(zip(metadata, f_metadata))
+        })
+
+    for file in files:
+        print('  Storing {} with metadata: {}'.format(
+            file['file_name'], file['metadata']))
 
 
 if __name__ == '__main__':
     desc = """CLI tool to upload new images with metadata:\n
     \n
-    python3 add_files.py 
+    python3 add_files.py
     """
 
     p = argparse.ArgumentParser(
@@ -25,8 +43,18 @@ if __name__ == '__main__':
     p.add_argument(
         "--path", help="path to directory to read images", required=True)
     p.add_argument(
-        "--extension", help="file extension (default png)", default="png")
+        "--metadata",
+        help="delimeter separated metadata fields", required=True)
 
+    p.add_argument(
+        "--extension", help="file extension (default png)", default=".png")
+    p.add_argument(
+        "--delimiter",
+        help="file name metadata delimeter (default -)", default="-")
+
+    p.add_argument(
+        "--dry-run",
+        help="Do not actually load info", action='store_true')
     args = p.parse_args()
     main(**vars(args))
 
