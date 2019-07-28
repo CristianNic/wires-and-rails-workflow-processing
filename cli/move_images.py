@@ -1,69 +1,46 @@
 #!/usr/bin/env python
 import argparse
-from pathlib import Path
-from panoptes_client import Panoptes, SubjectSet, Subject
+from panoptes_client import Panoptes, SubjectSet
+import os
 
 
 def main(
          origin, destination, filter,
          dry_run, username, password):
-    print(filter)
+    Panoptes.connect(username=username, password=password)
 
-#          path, extension, delimiter, metadata,
-#          , subjectset):
-#     # prepare metadata
-#     metadata = metadata.split(delimiter)
+    origin = SubjectSet.find(origin)
+    destination = SubjectSet.find(destination)
 
-#     # iterate over files pattern
-#     files = []
-#     pathes = Path(path).glob('**/*' + extension)
-#     for file in sorted(pathes):
-#         # crop any extension, ex .bin.png
-#         file_stem = file.name[:-len(extension)]
+    for subject in origin.subjects:
+        filtered = True
+        for key, value in filter.items():
+            if subject.metadata.get(key) != value:
+                filtered = False
+                break
+        if not filtered:
+            continue
 
-#         # get metadata from filename
-#         f_metadata = file_stem.split(delimiter)
-#         assert len(f_metadata) == len(metadata), (
-#             "Can't parse metadata {} for file {}".format(metadata, str(file)))
+        if dry_run:
+            print('  Should move subject #{} with metadata {}'.format(
+                subject.id, subject.metadata
+            ))
+            continue
 
-#         files.append({
-#             'file_name': str(file),
-#             'metadata': dict(zip(metadata, f_metadata))
-#         })
+        print('  Move subject #{} with metadata {}'.format(
+            subject.id, subject.metadata
+        ))
 
-#     if dry_run:
-#         for file in files:
-#             print('  Preview {} with metadata: {}'.format(
-#                 file['file-_name'], file['metadata']))
-#         return
-
-#     Panoptes.connect(username=username, password=password)
-#     subjectset = SubjectSet.find(subjectset)
-#     project = subjectset.links.project
-
-#     subjects = []
-#     for file in files:
-#         print('  Loading {} with metadata: {}'.format(
-#             file['file_name'], file['metadata']))
-#         if dry_run:
-#             continue
-
-#         subject = Subject()
-#         subject.links.project = project
-#         subject.add_location(file['file_name'])
-#         subject.metadata.update(file['metadata'])
-#         subject.save()
-#         subjects.append(subject)
-
-#     print('  Saving all...')
-#     subjectset.add(subjects)
-#     print('  Done')
+        destination.add(subject)
+        # not working now
+        # see https://github.com/zooniverse/panoptes-python-client/issues/221
+        # origin.remove(subject)
 
 
 if __name__ == '__main__':
     desc = """CLI tool tool for moving images
     """
-
+    os.environ["PANOPTES_DEBUG"] = "yes"
     p = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=desc)
