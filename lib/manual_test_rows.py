@@ -3,10 +3,15 @@ import logging
 import argparse
 
 from ocropy import Ocropy
+from queue_operations import QueueOperations
 
 
 def main(path, type):
     ocr = Ocropy(logging)
+
+    # we use the same upscale as in previous processing
+    qo = QueueOperations(logging)
+    qo.upscale_small_images(path)
 
     ocr._extract_raw_rows(path)
     t = path.replace('.png', '.pseg.png')
