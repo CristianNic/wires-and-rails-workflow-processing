@@ -8,9 +8,9 @@ from urllib.parse import urlparse
 from PIL import Image
 from panoptes_client import Project, Subject, SubjectSet
 
-from . import settings
-from .logger import setup_logger
-from .ocropy import Ocropy
+import settings
+from logger import setup_logger
+from ocropy import Ocropy
 
 class QueueOperations:
     """

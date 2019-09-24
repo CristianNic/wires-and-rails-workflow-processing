@@ -7,7 +7,7 @@ import os
 import numpy as np
 from PIL import Image
 
-from .logger import setup_logger
+from logger import setup_logger
 
 NOIZE_SIZE = 2
 BORDER_SPACE = 3
@@ -15,6 +15,8 @@ BORDER_SPACE = 3
 RAILS_INDENT = 2
 
 TELE_INDENT = 7
+
+ADD_SPACE_TO_IMAGE = 3
 
 
 def file_name_to_int(path):
@@ -90,6 +92,7 @@ class Ocropy:
 
     def _extract_elements_from_any(self, pseg_path, indent):
         raw_lines = self._extract_raw_lines_from_pseg(pseg_path)
+
         # calculate average x_size
         x_size = np.median([r['x_size'] for r in raw_lines])
         print('x_size', x_size)
@@ -99,7 +102,9 @@ class Ocropy:
             print(i, 'diff', (line['left'] - curent_left) / x_size)
             if line['left'] > curent_left + x_size * indent:
                 line['parent'] = False
-                raw_lines[curent_parent]['bottom'] = line['bottom']
+                raw_lines[curent_parent]['bottom'] = max(
+                    raw_lines[curent_parent]['bottom'],
+                    line['bottom'])
             else:
                 line['parent'] = True
                 curent_left = line['left']
@@ -111,46 +116,50 @@ class Ocropy:
 
     def _save_lines(self, path, lines):
         im = Image.open(path)
-        width = im.size[0]
+        width, height = im.size[:2]
         for i, l in enumerate(lines):
             print(l)
-            part = im.crop((0, l['top'], width,  l['bottom']))
+            top = max(l['top'] - ADD_SPACE_TO_IMAGE, 0)
+            bottom = min(l['bottom'] + ADD_SPACE_TO_IMAGE, height)
+            part = im.crop((0, top, width,  bottom))
             part.save('{}.{:04d}.png'.format(path, i))
+
+    def _extract_line_from_pseg(self, pixels, idx):
+        true_points = np.argwhere(pixels == idx)
+
+        # take the smallest points and use them as the top left of your crop
+        top = true_points.min(axis=0)[0]
+        # take the largest points and use them as the bottom right of your crop
+        bottom = true_points.max(axis=0)[0] + 1
+        # plus 1 because slice isn't
+        out = pixels[top:bottom, :].copy()
+        out[out != idx] = 0
+        out[out != 0] = 1
+
+        return out, top, bottom
 
     def _extract_raw_lines_from_pseg(self, pseg_path):
         """ extract lines coords from pseq file """
         img = np.array(Image.open(pseg_path))
         height, width = img.shape[0:2]
-        print(height, width)
+
         # we use only blue pixels
         pixels = img[:, :, 2]
 
-        line_idx = np.min(pixels, axis=1)
         lines = []
-        top, current_line_id = 0, line_idx[0]
-        for x, line_id in enumerate(line_idx):
-            if line_id == current_line_id:
-                continue
-            # new line started
-            if current_line_id != 255:
-                rows = pixels[top:x-1]
-                # set dots to 1
-                rows[rows < 255] = 1
-                rows[rows > 1] = 0
-                if x - top < 2:
-                    continue
-                columns = np.sum(rows, axis=0)
-                x_size, left = self._detect_left(columns)
-                lines.append({
-                    'id': current_line_id,
-                    'top': top,
-                    'bottom': x - 1,
-                    'x_size': x_size,
-                    'left': left,
-                })
+        max_line = np.max(pixels[pixels < 255])
+        for line_id in range(1, max_line + 1):
+            rows, top, bottom = self._extract_line_from_pseg(pixels, line_id)
 
-            current_line_id = line_id
-            top = x
+            columns = np.sum(rows, axis=0)
+            x_size, left = self._detect_left(columns)
+            lines.append({
+                'id': line_id,
+                'top': top,
+                'bottom': bottom,
+                'x_size': x_size,
+                'left': left,
+            })
 
         return lines
 
