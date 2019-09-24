@@ -40,9 +40,9 @@ can place colums files to preview.
 
 4. Run actual script preview:
 
-    cd bin/
-    python3 bin/manual_test_rows.py --path /tmp/tele1.png --type tele
-    python3 bin/manual_test_rows.py --path /tmp/rails1.png --type rails
+    cd /app/lib/
+    python3 manual_test_rows.py --path /tmp/tele1.png --type tele
+    python3 manual_test_rows.py --path /tmp/rails1.png --type rails
 
 This will create folder `/tmp/tele1` with indexed elements. Your probably
 will need to change rights to see it on host (ex. `chmod 777 /tmp/19320676.png`)
