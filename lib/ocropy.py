@@ -34,17 +34,6 @@ class Ocropy:
     def perform_row_segmentation(self, image_file_path):
         """Run row segmentation on the provided path and return the new row absolute filepaths"""
         success = self._execute_row_segmentation_command(image_file_path)
-        self._cleanup()
-        if not success:
-            # TODO throw exception so rq puts in failed queue / other recovery strategy
-            return False
-        name, _ext = os.path.splitext(image_file_path)
-        # The name and the resulting ocropus directory have the exact same name
-        return [os.path.join(name, file) for file in os.listdir(name)]
-
-    def perform_row_segmentation2(self, image_file_path):
-        """Run row segmentation on the provided path and return the new row absolute filepaths"""
-        success = self._execute_row_segmentation_command(image_file_path)
         # self._cleanup()
         if not success:
             # TODO throw exception so rq puts in failed queue / other recovery strategy

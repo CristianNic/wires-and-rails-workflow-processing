@@ -6,19 +6,16 @@ from ocropy import Ocropy
 from queue_operations import QueueOperations
 
 
-def main(path, type):
+def main(path):
     ocr = Ocropy(logging)
 
     # we use the same upscale as in previous processing
     qo = QueueOperations(logging)
     qo.upscale_small_images(path)
 
-    ocr._extract_raw_rows(path)
-    t = path.replace('.png', '.pseg.png')
-    if type == 'rails':
-        ocr._extract_elements_from_rails(t)
-    else:
-        ocr._extract_elements_from_tele(t)
+    print(ocr.perform_row_segmentation(path))
+
+    return
 
 
 if __name__ == '__main__':
@@ -30,10 +27,6 @@ if __name__ == '__main__':
 
     p.add_argument(
         "--path", help="Column image path", required=True)
-
-    p.add_argument(
-        "--type", help="Page type (rails, tele)",
-        choices=["rails", "tele"], required=True)
 
     args = p.parse_args()
     main(**vars(args))
