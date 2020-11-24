@@ -88,7 +88,7 @@ class QueueOperations:
         for column_index, row_paths in row_paths_by_column.items():
             self._logger.info('Creating %d new row subjects for column index %d for subject %s',
                               len(row_paths), column_index, source_subject.id)
-            for row_path in row_paths:
+            for row_index, row_path in enumerate(row_paths):
                 new_subject = Subject()
                 new_subject.links.project = project
                 copy_source_metadata_fields = ['book', 'page']
@@ -96,6 +96,7 @@ class QueueOperations:
                     new_subject.metadata[copy_field] = source_subject.metadata[copy_field]
                 new_subject.metadata['source_document_subject_id'] = source_subject.id
                 new_subject.metadata['source_document_column_index'] = column_index
+                new_subject.metadata['source_document_row_index'] = row_index
                 new_subject.add_location(row_path)
                 new_subject.save()
 
