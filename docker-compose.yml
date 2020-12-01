@@ -12,7 +12,7 @@ services:
     networks:
       - webnet
   cron-and-queue:
-    image: freen/wires-and-rails-workflow-processing:latest
+    image: .
     volumes:
       - .:/app
     deploy:
