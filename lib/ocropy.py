@@ -38,7 +38,7 @@ class Ocropy:
         if not success:
             # TODO throw exception so rq puts in failed queue / other recovery strategy
             return []
-        
+
         pseg_path = image_file_path.replace('.png', '.pseg.png')
         lines = self._extract_raw_lines_from_pseg(pseg_path)
 
